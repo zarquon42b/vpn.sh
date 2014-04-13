@@ -1,25 +1,33 @@
 #!/bin/bash
 start=0
-while getopts "c:s" opt; do
+function usage {
+    echo " "
+    echo "usage: vpn.sh [-c VPN ][ -s]"
+    echo " "
+    echo "    -c VPN      optional: string specifying the name of a vpn connection"
+    echo "    -s          optional: if VPN is specified, this starts the surveillance immediately"
+    echo "    -h -?       print this help"
+    echo " "
+    
+    exit
+}
+
+while getopts "c:s?h" opt; do
     case "$opt" in
         c)
             VPNNAME=$OPTARG
             ;;
         s)  start=1
             ;;
+	?)
+	    usage
+	    ;;
+	h)
+	    usage
+	    ;;
     esac
 done
 
-if [ "$1" == "--help" ];then
-    echo " "
-    echo "usage: vpn.sh [-c VPN ][ -s]"
-    echo " "
-    echo "    -c VPN      optional: string specifying the name of a vpn connection"
-    echo "    -s          optional: if VPN is specified, this starts the surveillance immediately"
-    echo " "
-    
-    exit
-fi
 
 ## make sure only one instance is running
 if [ $(pidof -x vpn.sh | wc -w) -gt 2 ]; then 

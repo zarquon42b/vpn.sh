@@ -28,7 +28,7 @@ for i in $allvpn; do
     tmp=$(echo $i | tr -cd '[[:alnum:]]._-')
     echo "[Desktop Action $tmp]
 Name=$i
-Exec=vpn.sh \"$i\" start
+Exec=vpn.sh -c \"$i\" -s
 #OnlyShowIn=Unity;" >> vpn.sh.desktop
 #vpn.sh.desktop
 done

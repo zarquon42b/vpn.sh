@@ -1,11 +1,21 @@
 #!/bin/bash
-echo $2 $1
+start=0
+while getopts "c:s" opt; do
+    case "$opt" in
+        c)
+            VPNNAME=$OPTARG
+            ;;
+        s)  start=1
+            ;;
+    esac
+done
+
 if [ "$1" == "--help" ];then
     echo " "
-    echo "usage: vpn.sh [VPN] [start]"
+    echo "usage: vpn.sh [-c VPN ][ -s]"
     echo " "
-    echo "    VPN      optional: string specifying the name of a vpn connection"
-    echo "    start    optional: if VPN is specified, this starts the surveillance immediately"
+    echo "    -c VPN      optional: string specifying the name of a vpn connection"
+    echo "    -s          optional: if VPN is specified, this starts the surveillance immediately"
     echo " "
     
     exit
@@ -21,9 +31,7 @@ fi
 allvpn=$(nmcli -t -f TYPE,NAME c | grep vpn | cut -d ":" -f2 | sort | sed 's/^/x\n/g' )
 
 ## check if a VPN was given as argument
-if [ ! -z "$1" ]; then
-    VPNNAME="$1"
-else
+if [ -z "$VPNNAME" ]; then
     ## check for already active VPN connection
     active=$(nmcli -t -f NAME,VPN con status | grep yes )
     if [ ! -z "$active" ]; then
@@ -32,8 +40,66 @@ else
 	IFS=' '
     fi
 fi
+function killvpn {
+    active=$(nmcli -t -f uuid,VPN con status | grep yes | cut -d ":" -f1)
+    if [ ! -z $active ]; then
+	nmcli con down uuid $active
+    fi
+}
 
-
+function killpid {
+    if [ ! -z $vpn_pid ];then
+	echo $vpn_pid
+	kill $vpn_pid
+	wait $vpn_pid 2>/dev/null
+	vpn_pid=""
+	echo "stopped"
+	notify-send "vpn surveillance stopped"
+    fi
+}
+function startvpn {
+    IFS=$'\n'
+    if [ -z $vpn_pid ];then
+	if [ -z "$VPNNAME" ]; then
+	    
+	    VPNNAME=$(zenity --list --height 400 --radiolist --text "Please select VPN first" --column Select --column VPN $allvpn)
+	    
+	fi
+	if [ -z "$VPNNAME" ]; then
+	    notify-send "no VPN selected"
+	else
+	    vpn $VPNNAME &
+	    vpn_pid=$!
+	    echo "$vpn_pid"
+	    notify-send "vpn surveillance started for $VPNNAME"
+	    
+	fi
+	
+    else
+	notify-send "already running $VPNNAME"
+    fi
+    IFS=' '
+}
+function showstatus {
+    if [ ! -z $vpn_pid ];then
+	notify-send "VPN surveillance is active. Current VPN is $VPNNAME"
+	nocon=""
+    else
+	active=$(nmcli -t -f uuid,VPN con status | grep yes | cut -d ":" -f1)
+	if [ -z $active ]; then
+	    nocon=". No VPN connection active."
+	fi
+	if [ -z "$VPNNAME" ];then
+	    nameinfo=" No VPN selected"
+	else
+	    nameinfo= Current VPN is $VPNNAME
+	fi
+	notify-send "VPN surveillance is inactive.$nameinfo $nocon"
+    fi
+}
+function pingfun {
+    ping -q -w 1 -c 1 8.8.8.8 > /dev/null && return 0 || return 1
+}
 nice=0
 #### here comes the main function
 function vpn {
@@ -43,10 +109,11 @@ function vpn {
 	# enter desired time between checks here (in seconds)
 	SLEEPTIME=15
 	
-	while (( 1 == 1)); do
-	    upwww=$(nmcli -f STATE con status | grep activated)
+	while :
+	do
+	    upwww=$(pingfun)
 	    ## check if network is up
-	    if [[ "$upwww" == *activated* ]]; then    
+	    if ( $upwww ); then    
 		echo "network is up"
 		tested=$(nmcli con status uuid $VPNNAME | grep -c UUID)
 		
@@ -95,12 +162,9 @@ function vpn {
 }
 
 
-if [[ $2 == "start" ]]; then
-    IFS=$'\n'    
-    vpn "$VPNNAME" &
-    vpn_pid=$!
-    IFS=' '
-    #notify-send "vpn surveillance started"
+if [[ $start == 1 ]]; then
+    startvpn
+    #vpn surveillance started"
 fi
 
 ## start appindicator
@@ -114,99 +178,37 @@ EOF
 ) | PREFIX/vpnind.py --persist -i gnome-eyes-applet | while read s; do
     case "$s" in 
 	start)
-	    IFS=$'\n'
-	    if [ -z $vpn_pid ];then
-		if [ -z "$VPNNAME" ]; then
-		    
-		    VPNNAME=$(zenity --list --height 400 --radiolist --text "Please select VPN first" --column Select --column VPN $allvpn)
-		    
-		fi
-		if [ -z "$VPNNAME" ]; then
-		    notify-send "no VPN selected"
-		else
-		    vpn $VPNNAME &
-		    vpn_pid=$!
-		    echo "$vpn_pid"
-		    notify-send "vpn surveillance started for $VPNNAME"
-		    
-		fi
-		
-	    else
-		notify-send "already running $VPNNAME"
-	    fi
-	    IFS=' '
-	    
+	    startvpn
 	    ;;
 	stop)
-	    if [ ! -z $vpn_pid ];then
-		echo $vpn_pid
-		kill $vpn_pid
-		wait $vpn_pid 2>/dev/null
-		vpn_pid=""
-		echo "stopped"
-		notify-send "vpn surveillance stopped"
-		
-	    fi
+	    killpid
 	    ;;
 	status)
-	    if [ ! -z $vpn_pid ];then
-		notify-send "VPN surveillance is active. Current VPN is $VPNNAME"
-		nocon=""
-	    else
-		active=$(nmcli -t -f uuid,VPN con status | grep yes | cut -d ":" -f1)
-	    if [ -z $active ]; then
-		nocon=". No VPN connection active."
-	    fi
-	    if [ -z "$VPNNAME" ];then
-		nameinfo=" No VPN selected"
-	    else
-		nameinfo= Current VPN is $VPNNAME
-	    fi
-		notify-send "VPN surveillance is inactive.$nameinfo $nocon"
-	    fi
+	    showstatus
 	    ;;
 	
 	"change VPN")
 	    IFS=$'\n'
 	    VPNNAME=$(zenity --list --height 400 --radiolist --text "Select VPN" --column Select --column VPN $allvpn)
 	    if [ ! -z "$VPNNAME" ]; then
-		if [ ! -z $vpn_pid ];then
-		    echo $vpn_pid
-		    kill $vpn_pid
-		    wait $vpn_pid 2>/dev/null
-		    vpn_pid=""
-		    echo "stopped"
-		    #notify-send "vpn surveillance stopped"
-		fi
-		
-		#VPNNAME=$(zenity --list --radiolist --column "Please select VPN" $allvpn)
-		
-		active=$(nmcli -t -f uuid,VPN con status | grep yes | cut -d ":" -f1)
-		
-		if [ ! -z $active ]; then
-		    nmcli con down uuid $active	
-		fi
-		#VPNNAME=$(zenity --entry --text "VPNNAME" --entry-text "Toronto"); 
-		vpn $VPNNAME &
-		vpn_pid=$!
-		echo "$vpn_pid"
-		notify-send "trying to start surveillance for VPN $VPNNAME"
-		IFS=' '
-	    else
-		IFS=' '
+		killpid
+		echo "stopped"
+		#notify-send "vpn surveillance stopped"
 	    fi
+	    
+	    killvpn
+	    #VPNNAME=$(zenity --entry --text "VPNNAME" --entry-text "Toronto"); 
+	    vpn $VPNNAME &
+	    vpn_pid=$!
+	    echo "$vpn_pid"
+	    notify-send "trying to start surveillance for VPN $VPNNAME"
+	    IFS=' '
+	    #IFS=' '
+	    #fi
 	    ;;
 	"exit VPN")
-	    if [ ! -z $vpn_pid ];then
-		echo $vpn_pid
-		kill $vpn_pid
-		wait $vpn_pid 2>/dev/null
-		vpn_pid=""
-	    fi
-	    active=$(nmcli -t -f uuid,VPN con status | grep yes | cut -d ":" -f1)
-	    if [ ! -z $active ]; then
-		nmcli con down uuid $active
-	    fi
+	    killpid
+	    killvpn
 	    ;;
     esac
 done

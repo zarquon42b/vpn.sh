@@ -197,6 +197,12 @@ EOF
 	    fi
 	    ;;
 	"exit VPN")
+	    if [ ! -z $vpn_pid ];then
+		echo $vpn_pid
+		kill $vpn_pid
+		wait $vpn_pid 2>/dev/null
+		vpn_pid=""
+	    fi
 	    active=$(nmcli -t -f uuid,VPN con status | grep yes | cut -d ":" -f1)
 	    if [ ! -z $active ]; then
 		nmcli con down uuid $active

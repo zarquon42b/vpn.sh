@@ -1,6 +1,6 @@
 #!/bin/bash
-
-if [ $1 == "--help" ];then
+echo $2 $1
+if [ "$1" == "--help" ];then
     echo " "
     echo "usage: vpn.sh [VPN] [start]"
     echo " "
@@ -21,8 +21,8 @@ fi
 allvpn=$(nmcli -t -f TYPE,NAME c | grep vpn | cut -d ":" -f2 | sort | sed 's/^/x\n/g' )
 
 ## check if a VPN was given as argument
-if [ ! -z $1 ]; then
-    VPNNAME=$1
+if [ ! -z "$1" ]; then
+    VPNNAME="$1"
 else
     ## check for already active VPN connection
     active=$(nmcli -t -f NAME,VPN con status | grep yes )
@@ -97,7 +97,7 @@ function vpn {
 
 if [[ $2 == "start" ]]; then
     IFS=$'\n'    
-    vpn $VPNNAME &
+    vpn "$VPNNAME" &
     vpn_pid=$!
     IFS=' '
     #notify-send "vpn surveillance started"
@@ -111,7 +111,7 @@ change VPN
 exit VPN
 status
 EOF
-) | $HOME/scripts/vpnind.py --persist -i gnome-eyes-applet | while read s; do
+) | PREFIX/vpnind.py --persist -i gnome-eyes-applet | while read s; do
     case "$s" in 
 	start)
 	    IFS=$'\n'

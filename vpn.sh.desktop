@@ -1,16 +1,8 @@
+
 [Desktop Entry]
 Version=1.0
 Type=Application
 Name=vpn.sh
-Exec=bash -c "/home/schlager/scripts/vpn.sh"
+Exec=bash -c "PREFIX/vpn.sh"
 Icon=gnome-eyes-applet
 Terminal=false
-Actions=VPN Toronto;VPN Switzerland;
-[Desktop Action VPN Toronto]
-Name=VPN Toronto
-Exec=bash -c "/home/schlager/scripts/vpn.sh" Toronto on
-OnlyShowIn=Unity;
-[Desktop Action VPN Switzerland]
-Name=VPN Switzerland
-Exec=bash -c "/home/schlager/scripts/vpn.sh" Switzerland on
-OnlyShowIn=Unity;

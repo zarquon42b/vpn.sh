@@ -1,18 +1,20 @@
 #!/bin/bash
 start=0
+SLEEPTIME=15
 function usage {
     echo " "
-    echo "usage: vpn.sh [-c VPN ][ -s]"
+    echo "usage: vpn.sh [-c VPN ][ -s][-t TIME]"
     echo " "
     echo "    -c VPN      optional: string specifying the name of a vpn connection"
     echo "    -s          optional: if VPN is specified, this starts the surveillance immediately"
+    echo "    -t TIME     optional: set inteval time (in seconds) to check if VPN is up. Default is 15 seconds."
     echo "    -h -?       print this help"
     echo " "
     
     exit
 }
 
-while getopts "c:s?h" opt; do
+while getopts "c:s?ht:" opt; do
     case "$opt" in
         c)
             VPNNAME=$OPTARG
@@ -25,6 +27,9 @@ while getopts "c:s?h" opt; do
 	h)
 	    usage
 	    ;;
+	t)
+	    SLEEPTIME=$OPTARG
+	    
     esac
 done
 
@@ -115,7 +120,7 @@ function vpn {
     if [ ! -z $VPNNAME ];then
 	#$1 #netherlands
 	# enter desired time between checks here (in seconds)
-	SLEEPTIME=15
+	
 	
 	while :
 	do

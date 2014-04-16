@@ -206,15 +206,21 @@ EOF
 	    if [ ! -z "$VPNNAME" ]; then
 		killpid
 		echo "stopped"
+		killvpn
+		vpn $VPNNAME &
+		vpn_pid=$!
+		notify-send "trying to start surveillance for VPN $VPNNAME"
 		#notify-send "vpn surveillance stopped"
+
+	    else
+		notify-send "Nothing selected."
 	    fi
 	    
-	    killvpn
+	    
 	    #VPNNAME=$(zenity --entry --text "VPNNAME" --entry-text "Toronto"); 
-	    vpn $VPNNAME &
-	    vpn_pid=$!
-	    echo "$vpn_pid"
-	    notify-send "trying to start surveillance for VPN $VPNNAME"
+	    
+	    #echo "$vpn_pid"
+	    
 	    IFS=' '
 	    #IFS=' '
 	    #fi

@@ -18,6 +18,8 @@ while getopts "c:s?ht:" opt; do
     case "$opt" in
         c)
             VPNNAME=$OPTARG
+	    VPNNAME=$(nmcli -t -f NAME,uuid c| grep "$VPNNAME" |cut -d ":" -f1 | head -1)
+
             ;;
         s)  start=1
             ;;

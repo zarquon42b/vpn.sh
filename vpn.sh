@@ -190,7 +190,7 @@ change VPN
 exit VPN
 status
 EOF
-) | PREFIX/vpnind.py --persist -i gnome-eyes-applet | while read s; do
+) | PREFIX/vpnind.py --persist -i vpn.sh | while read s; do
     case "$s" in 
 	start)
 	    startvpn

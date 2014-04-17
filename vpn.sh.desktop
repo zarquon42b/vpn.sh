@@ -4,5 +4,5 @@ Version=1.0
 Type=Application
 Name=vpn.sh
 Exec=bash -c "PREFIX/vpn.sh"
-Icon=gnome-eyes-applet
+Icon=vpn.sh
 Terminal=false

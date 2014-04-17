@@ -36,10 +36,10 @@ IFS=' '
     
 if [[ $EUID -ne 0 ]]; then
     cp vpn.sh.desktop $HOME/.local/share/application
-    cp gnome-eyes-applet.png .local/share/icons
+    cp vpn.sh.png .local/share/icons
 else
     cp vpn.sh.desktop /usr/share/applications/
-    cp gnome-eyes-applet.png /usr/share/icons
+    cp vpn.sh.png /usr/share/icons
 fi
 
 cp vpn.sh $PREFIX

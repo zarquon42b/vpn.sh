@@ -53,6 +53,7 @@ if [ -z "$VPNNAME" ]; then
 	IFS=$'\n'
 	VPNNAME=$(echo $active | cut -d ":" -f1)
 	IFS=' '
+	echo $VPNNAME
     fi
 fi
 function killvpn {
@@ -75,6 +76,16 @@ function killpid {
 function startvpn {
     IFS=$'\n'
     if [ -z $vpn_pid ];then
+	if [ -z "$VPNNAME" ]; then
+	    ## check for already active VPN connection
+	    active=$(nmcli -t -f NAME,VPN con status | grep yes )
+	    if [ ! -z "$active" ]; then
+		IFS=$'\n'
+		VPNNAME=$(echo $active | cut -d ":" -f1)
+		IFS=' '
+		echo $VPNNAME
+	    fi
+	fi
 	if [ -z "$VPNNAME" ]; then
 	    
 	    VPNNAME=$(zenity --list --height 400 --radiolist --text "Please select VPN first" --column Select --column VPN $allvpn)
@@ -184,25 +195,25 @@ fi
 
 ## start appindicator
 (cat <<EOF
-start
-stop
-change VPN
-exit VPN
-status
+Start
+Stop
+Change VPN
+Exit VPN
+Status
 EOF
 ) | PREFIX/vpnind.py --persist -i vpn.sh | while read s; do
     case "$s" in 
-	start)
+	Start)
 	    startvpn
 	    ;;
-	stop)
+	Stop)
 	    killpid
 	    ;;
-	status)
+	Status)
 	    showstatus
 	    ;;
 	
-	"change VPN")
+	"Change VPN")
 	    IFS=$'\n'
 	    VPNNAME=$(zenity --list --height 400 --radiolist --text "Select VPN" --column Select --column VPN $allvpn)
 	    if [ ! -z "$VPNNAME" ]; then
@@ -227,7 +238,7 @@ EOF
 	    #IFS=' '
 	    #fi
 	    ;;
-	"exit VPN")
+	"Exit VPN")
 	    killpid
 	    killvpn
 	    ;;

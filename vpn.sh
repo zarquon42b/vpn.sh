@@ -80,16 +80,13 @@ function startvpn {
 	    ## check for already active VPN connection
 	    active=$(nmcli -t -f NAME,VPN con status | grep yes )
 	    if [ ! -z "$active" ]; then
-		IFS=$'\n'
+		#IFS=$'\n'
 		VPNNAME=$(echo $active | cut -d ":" -f1)
-		IFS=' '
+		#IFS=' '
 		echo $VPNNAME
+	    else
+		VPNNAME=$(zenity --list --height 400 --radiolist --text "Please select VPN first" --column Select --column VPN $allvpn)
 	    fi
-	fi
-	if [ -z "$VPNNAME" ]; then
-	    
-	    VPNNAME=$(zenity --list --height 400 --radiolist --text "Please select VPN first" --column Select --column VPN $allvpn)
-	    
 	fi
 	if [ -z "$VPNNAME" ]; then
 	    notify-send "no VPN selected"

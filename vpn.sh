@@ -1,5 +1,6 @@
 #!/bin/bash
 start=0
+killit=0
 SLEEPTIME=15
 function usage {
     echo " "
@@ -9,18 +10,22 @@ function usage {
     echo "    -s          optional: if VPN is specified, this starts the surveillance immediately"
     echo "    -t TIME     optional: set inteval time (in seconds) to check if VPN is up. Default is 15 seconds."
     echo "    -h -?       print this help"
+    echo "    -k          kill running instances
+"
     echo " "
     
     exit
 }
 
-while getopts "c:s?ht:" opt; do
+while getopts "c:sk?ht:" opt; do
     case "$opt" in
         c)
             VPNNAME=$OPTARG
 	    VPNNAME=$(nmcli -t -f NAME,uuid c| grep "$VPNNAME" |cut -d ":" -f1 | head -1)
 
             ;;
+	k)  killit=1
+	    ;;
         s)  start=1
             ;;
 	?)
@@ -31,15 +36,42 @@ while getopts "c:s?ht:" opt; do
 	    ;;
 	t)
 	    SLEEPTIME=$OPTARG
+	    ;;
+	
+	    
 	    
     esac
 done
 
 
+echo $killit
+function killvpn {
+    active=$(nmcli -t -f uuid,VPN con status | grep yes | cut -d ":" -f1)
+    if [ ! -z $active ]; then
+	nmcli con down uuid $active
+    fi
+}
 ## make sure only one instance is running
-if [ $(pidof -x vpn.sh | wc -w) -gt 2 ]; then 
-    notify-send "already running"
+if [ $(pidof -x vpn.sh | wc -w) -gt 2 ]; then
+    if [ $killit -eq 1 ]; then
+	#kill -9 $(pidof -x vpn.sh)
+	killvpn
+	pyproc=$(ps aux | grep [p]ython.*.*persist.*vpn.sh | awk {'print $2'} )
+	#echo $pyproc
+	allproc=$(ps aux | grep [b]ash.*vpn.sh | awk {'print $2'} )
+	#echo $allproc
+	for pid in $pyproc; do kill -9 $pid; done
+	for pid in $allproc; do kill -9 $pid;echo $pid;echo 1; done
+	exit
+    else
+	notify-send "already running"
+	exit
+	
+    fi
+elif [ $killit -eq 1 ]; then
+    echo "nothing to kill"
     exit
+    
 fi
 
 ## get all available vpn connections
@@ -56,12 +88,6 @@ if [ -z "$VPNNAME" ]; then
 	echo $VPNNAME
     fi
 fi
-function killvpn {
-    active=$(nmcli -t -f uuid,VPN con status | grep yes | cut -d ":" -f1)
-    if [ ! -z $active ]; then
-	nmcli con down uuid $active
-    fi
-}
 
 function killpid {
     if [ ! -z $vpn_pid ];then
@@ -73,6 +99,8 @@ function killpid {
 	notify-send "vpn surveillance stopped"
     fi
 }
+
+
 function startvpn {
     IFS=$'\n'
     if [ -z $vpn_pid ];then

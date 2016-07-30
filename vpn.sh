@@ -167,7 +167,7 @@ function vpn {
 	    ## check if network is up
 	    if ( $upwww ); then    
 		echo "network is up"
-		tested=$(nmcli con status uuid $VPNNAME | grep -c UUID)
+		tested=$(nmcli con show --active uuid $VPNNAME | grep -c UUID)
 		
 		#possible results:
 		# 0 - no connection - need to start

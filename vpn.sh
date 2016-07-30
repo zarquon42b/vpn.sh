@@ -46,7 +46,8 @@ done
 
 echo $killit
 function killvpn {
-    active=$(nmcli -t -f uuid,VPN con status | grep yes | cut -d ":" -f1)
+    echo "2"
+    active=$(nmcli -t -f UUID,TYPE con show --active | grep vpn | cut -d ":" -f1)
     if [ ! -z $active ]; then
 	nmcli con down uuid $active
     fi
@@ -80,7 +81,7 @@ allvpn=$(nmcli -t -f TYPE,NAME c | grep vpn | cut -d ":" -f2 | sort | sed 's/^/x
 ## check if a VPN was given as argument
 if [ -z "$VPNNAME" ]; then
     ## check for already active VPN connection
-    active=$(nmcli -t -f NAME,VPN con status | grep yes )
+    active=$(nmcli -t -f UUID,TYPE con show --active | grep vpn | cut -d ":" -f1)
     if [ ! -z "$active" ]; then
 	IFS=$'\n'
 	VPNNAME=$(echo $active | cut -d ":" -f1)
@@ -106,7 +107,7 @@ function startvpn {
     if [ -z $vpn_pid ];then
 	if [ -z "$VPNNAME" ]; then
 	    ## check for already active VPN connection
-	    active=$(nmcli -t -f NAME,VPN con status | grep yes )
+	    active=$(nmcli -t -f UUID,TYPE con show --active | grep vpn | cut -d ":" -f1)
 	    if [ ! -z "$active" ]; then
 		#IFS=$'\n'
 		VPNNAME=$(echo $active | cut -d ":" -f1)
@@ -136,7 +137,7 @@ function showstatus {
 	notify-send "VPN surveillance is active. Current VPN is $VPNNAME"
 	nocon=""
     else
-	active=$(nmcli -t -f uuid,VPN con status | grep yes | cut -d ":" -f1)
+	active=$(nmcli -t -f UUID,TYPE con show --active | grep vpn | cut -d ":" -f1)
 	if [ -z $active ]; then
 	    nocon=". No VPN connection active."
 	fi
